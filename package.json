@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "node scripts/build-runtime-notices.mjs && node scripts/build-manifest.mjs --release 2026-07-23.1 --effective-date 2026-07-23",
-    "test": "node scripts/verify-legal-release.mjs --self-test",
-    "verify": "node scripts/verify-legal-release.mjs --release 2026-07-23.1 --effective-date 2026-07-23"
+    "build": "node scripts/build-runtime-notices.mjs --release 2026-08-08.1 --effective-date 2026-08-08 && node scripts/build-manifest.mjs --release 2026-08-08.1 --effective-date 2026-08-08",
+    "test": "node scripts/verify-legal-release.mjs --self-test && node scripts/verify-draft-content.mjs --self-test",
+    "verify": "node scripts/verify-legal-release.mjs --release 2026-08-08.1 --effective-date 2026-08-08"
   }
 }

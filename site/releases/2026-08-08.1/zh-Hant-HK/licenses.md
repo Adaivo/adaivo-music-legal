@@ -1,19 +1,20 @@
-# Adaivo Music Third-Party Notices
+# Adaivo Music 第三方通知
 
+**Document status:** APPROVED — NATIVE-LANGUAGE AND LEGAL REVIEW COMPLETE — APPROVED FOR RELEASE AND PUBLICATION
 **Release:** 2026-08-08.1
 **Effective date:** 2026-08-08
 
-## Scope
+## 範圍
 
-These are the notices included for the current release built from Adaivo Music commit c810e47c83771fafea1366a6a58d4762c553b751. The JavaScript inventory is the complete 660-entry runtime closure deterministically derived from the exact package-lock v3 root runtime dependencies, dependencies, optional dependencies, and peer dependencies using package-lock node_modules resolution.
+本通知適用於以 Adaivo Music 提交版本 c810e47c83771fafea1366a6a58d4762c553b751 建立的現行版本。JavaScript 清單涵蓋完整的 660 項執行時依賴閉包；該清單以確定方式，按照 package-lock 的 node_modules 解析規則，從指定 package-lock v3 所列的根層級執行時依賴項、一般依賴項、可選依賴項及對等依賴項（peerDependencies）產生。
 
-The lock metadata records no repository or copyright fields for these entries. “Not recorded” is explicit and no value is inferred. Resolved source archives are separate from repository metadata. No entry has a missing or unidentified license, and none delegates its license to another named file. The three multi-license expressions are preserved exactly. Local patches apply to react-native-blob-util and react-native-track-player; their upstream licenses remain identified.
+鎖定檔案沒有記錄這些項目的程式碼庫或版權資料欄。「Not recorded」是明確記錄，我們沒有推斷任何值。解析所得的源碼壓縮檔案與程式碼庫元數據分開記錄。所有項目的授權均已識別，亦沒有項目將其授權資料指向另一個具名檔案。三個多重授權表述均按原文保留。react-native-blob-util 及 react-native-track-player 已套用本地修補；其上游授權仍有明確記錄。
 
-This JavaScript closure is not a binary-derived native inventory. Final iOS and Android store binaries require regenerated and reviewed native dependency/license reports before store launch. This document does not claim native completeness.
+此 JavaScript 閉包並非按二進制檔案產生的原生依賴項清單。最終 iOS 及 Android 商店二進制檔案在商店推出前，必須重新產生並審核原生依賴項及授權報告。本文件不聲稱已涵蓋全部原生依賴項。
 
-Adaivo-authored music, legal text, code, and brand material are not open source and are not licensed by this notice.
+Adaivo 創作的音樂、法律文本、程式碼及品牌資料並非開放源碼，亦不因本通知而獲授權。
 
-## Runtime JavaScript inventory
+## 執行時 JavaScript 清單
 
 - package: @babel/code-frame; version: 7.29.7; lock path: node_modules/@babel/code-frame; source: https://registry.npmjs.org/@babel/code-frame/-/code-frame-7.29.7.tgz; repository: Not recorded; copyright: Not recorded; license: MIT.
 - package: @babel/compat-data; version: 7.29.7; lock path: node_modules/@babel/compat-data; source: https://registry.npmjs.org/@babel/compat-data/-/compat-data-7.29.7.tgz; repository: Not recorded; copyright: Not recorded; license: MIT.
@@ -676,9 +677,9 @@ Adaivo-authored music, legal text, code, and brand material are not open source 
 - package: yargs-parser; version: 21.1.1; lock path: node_modules/yargs-parser; source: https://registry.npmjs.org/yargs-parser/-/yargs-parser-21.1.1.tgz; repository: Not recorded; copyright: Not recorded; license: ISC.
 - package: yocto-queue; version: 0.1.0; lock path: node_modules/yocto-queue; source: https://registry.npmjs.org/yocto-queue/-/yocto-queue-0.1.0.tgz; repository: Not recorded; copyright: Not recorded; license: MIT.
 
-## License texts and notices
+## 許可文本及通知
 
-The exact expression on each inventory row controls. For multi-license expressions, each available option is linked below. Copyright and attribution remain with the respective upstream authors and contributors.
+每個清單條目中的精確表述具有約束力。對於多重許可表述，下方已連結每個可用選項。版權及署名仍歸各上游作者及貢獻者所有。
 
 - 0BSD: https://spdx.org/licenses/0BSD.html
 - Apache-2.0: https://spdx.org/licenses/Apache-2.0.html
@@ -692,6 +693,6 @@ The exact expression on each inventory row controls. For multi-license expressio
 - Python-2.0: https://spdx.org/licenses/Python-2.0.html
 - Unlicense: https://spdx.org/licenses/Unlicense.html
 
-## Native release gate
+## 原生發布門檻
 
-Identifiable committed inputs include React Native and Hermes families, AppAuth and Google support libraries, Nitro/OpenIAP components, Yoga, and OpenSSL-Universal. Android test-only dependencies are excluded by committed Gradle configuration. This summary is not a substitute for notices generated from final signed binaries; native binary-derived reports remain mandatory before store release.
+可識別的已提交輸入包括 React Native 及 Hermes 系列、AppAuth 及 Google 支援程式庫、Nitro/OpenIAP 元件、Yoga 及 OpenSSL-Universal。Android 僅供測試的依賴項已由已提交的 Gradle 設定排除。本摘要不能取代從最終已簽署二進制檔案產生的通知；在商店發布前，仍必須提供由原生二進制檔案產生的報告。

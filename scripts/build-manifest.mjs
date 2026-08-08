@@ -1,27 +1,35 @@
 import { createHash } from "node:crypto";
+import { spawnSync } from "node:child_process";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import process from "node:process";
+import { writeTransactionally } from "./output-transaction.mjs";
 
 const root = resolve(new URL("..", import.meta.url).pathname);
-const publicBaseUrl = "https://regtechcrypto.github.io/adaivo-music-legal/";
-const locales = ["en", "zh-Hans"];
+const publicBaseUrl = "https://adaivo.github.io/adaivo-music-legal/";
+const historicalRelease = "2026-07-23.1";
+const historicalLocales = ["en", "zh-Hans"];
+const releaseLocales = ["en", "zh-Hans", "ja", "ko", "zh-Hant-HK"];
 const documents = ["licenses", "privacy", "terms"];
 const allowedHosts = new Set(["registry.npmjs.org", "spdx.org", "www.apache.org", "opensource.org", "www.openssl.org"]);
 
-function arg(name) {
-  const i = process.argv.indexOf(name);
-  if (i < 0 || !process.argv[i + 1]) throw new Error(`missing ${name}`);
-  return process.argv[i + 1];
-}
 function optionalArg(name, fallback) {
   const i = process.argv.indexOf(name);
   return i < 0 ? fallback : resolve(process.argv[i + 1]);
 }
-const release = arg("--release");
-const effectiveDate = arg("--effective-date");
+const releaseIndex = process.argv.indexOf("--release");
+const effectiveDateIndex = process.argv.indexOf("--effective-date");
+if (releaseIndex < 0 && effectiveDateIndex < 0) throw new Error("missing --release and --effective-date");
+if ((releaseIndex < 0) !== (effectiveDateIndex < 0)) throw new Error("--release and --effective-date must be supplied together");
+const release = process.argv[releaseIndex + 1];
+const effectiveDate = process.argv[effectiveDateIndex + 1];
+if (!release || !effectiveDate) throw new Error("--release and --effective-date must be supplied together");
 const outputRoot = optionalArg("--output-dir", root);
+const contentRoot = optionalArg("--content-root", root);
 if (!/^\d{4}-\d{2}-\d{2}\.\d+$/.test(release) || !/^\d{4}-\d{2}-\d{2}$/.test(effectiveDate)) throw new Error("invalid release metadata");
+if (release === historicalRelease && effectiveDate !== "2026-07-23") throw new Error("historical release effective-date must equal 2026-07-23");
+const locales = release === historicalRelease ? historicalLocales : releaseLocales;
+const requiresFiveLocaleRelease = release !== historicalRelease;
 
 function normalize(value) {
   const text = value.replace(/\r\n?/g, "\n").normalize("NFC");
@@ -32,6 +40,22 @@ function normalize(value) {
     if (url.protocol !== "https:" || !allowedHosts.has(url.hostname)) throw new Error(`URL not allowed: ${url}`);
   }
   return text.endsWith("\n") ? text : `${text}\n`;
+}
+
+function assertFutureReleaseReady() {
+  if (!requiresFiveLocaleRelease) return;
+  const result = spawnSync(process.execPath, [
+    "scripts/verify-draft-content.mjs",
+    "--root", contentRoot,
+    "--mode", "release-ready",
+    "--release", release,
+    "--effective-date", effectiveDate,
+  ], { cwd: root, encoding: "utf8" });
+  if (result.status !== 0) {
+    const nestedReason = /release_ready_rejected: ([^\r\n]+)/.exec(result.stderr)?.[1];
+    const assertionReason = /AssertionError(?: \[[^\]]+\])?:\s*([^\r\n]+)/.exec(result.stderr)?.[1];
+    throw new Error(`release_ready_rejected: ${nestedReason ?? assertionReason ?? `policy process exited ${result.status}`}`);
+  }
 }
 
 function inline(text) {
@@ -85,39 +109,64 @@ code{overflow-wrap:anywhere}main a{overflow-wrap:anywhere;word-break:break-word}
 @media(prefers-color-scheme:dark){:root{--bg:#101714;--panel:#17221e;--ink:#edf8f2;--muted:#adc2b8;--accent:#74d9bd;--focus:#ffb45e}main{box-shadow:none}}
 `;
 const cssFingerprint = createHash("sha256").update(css).digest("hex").slice(0, 16);
+const pageChrome = {
+  en: { navigation: "Legal documents", canonicalMarkdown: "Canonical Markdown", rights: "All rights reserved.", documents: { licenses: "Third-Party Notices", privacy: "Privacy Policy", terms: "Terms of Service" } },
+  "zh-Hans": { navigation: "法律文件", canonicalMarkdown: "规范 Markdown", rights: "保留所有权利。", documents: { licenses: "第三方声明", privacy: "隐私政策", terms: "服务条款" } },
+  ja: { navigation: "法的文書", canonicalMarkdown: "正規 Markdown", rights: "無断転載を禁じます。", documents: { licenses: "第三者ライセンス", privacy: "プライバシーポリシー", terms: "利用規約" } },
+  ko: { navigation: "법률 문서", canonicalMarkdown: "정식 Markdown", rights: "모든 권리 보유.", documents: { licenses: "제3자 고지", privacy: "개인정보 처리방침", terms: "서비스 이용약관" } },
+  "zh-Hant-HK": { navigation: "法律文件", canonicalMarkdown: "正式 Markdown", rights: "保留一切權利。", documents: { licenses: "第三方通知", privacy: "私隱政策", terms: "服務條款" } },
+};
+const historicalChrome = {
+  navigation: "Legal documents",
+  canonicalMarkdown: "Canonical Markdown",
+  rights: "All rights reserved.",
+  documents: { licenses: "licenses", privacy: "privacy", terms: "terms" },
+};
 
-const entries = [];
+assertFutureReleaseReady();
+const sourceDocuments = [];
 for (const locale of locales) {
   for (const document of documents) {
     const source = `content/${locale}/${document}.md`;
-    const markdown = normalize(await readFile(resolve(root, source), "utf8"));
+    const markdown = normalize(await readFile(resolve(contentRoot, source), "utf8"));
+    sourceDocuments.push({ locale, document, source, markdown });
+  }
+}
+const preparedDocuments = [];
+for (const { locale, document, source, markdown } of sourceDocuments) {
     if (!markdown.includes(release) || !markdown.includes(effectiveDate)) throw new Error(`metadata missing in ${source}`);
-    const bytes = Buffer.from(markdown);
+    preparedDocuments.push({ locale, document, source, markdown, bytes: Buffer.from(markdown) });
+}
+
+await writeTransactionally(outputRoot, async (stagedOutputRoot) => {
+const entries = [];
+for (const { locale, document, source, markdown, bytes } of preparedDocuments) {
+    const chrome = requiresFiveLocaleRelease ? pageChrome[locale] : historicalChrome;
     const releasePath = `site/releases/${release}/${locale}/${document}.md`;
-    await mkdir(dirname(resolve(outputRoot, releasePath)), { recursive: true });
-    await writeFile(resolve(outputRoot, releasePath), bytes);
+    await mkdir(dirname(resolve(stagedOutputRoot, releasePath)), { recursive: true });
+    await writeFile(resolve(stagedOutputRoot, releasePath), bytes);
     const pagePath = `site/${locale}/${document}/index.html`;
-    await mkdir(dirname(resolve(outputRoot, pagePath)), { recursive: true });
+    await mkdir(dirname(resolve(stagedOutputRoot, pagePath)), { recursive: true });
     const title = markdown.match(/^# (.+)$/m)?.[1] ?? document;
-    const nav = documents.map((item) => `<a href="../${item}/">${item}</a>`).join(" · ");
+    const nav = documents.map((item) => `<a href="../${item}/">${chrome.documents[item]}</a>`).join(" · ");
     const html = `<!doctype html>
 <html lang="${locale}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><title>${inline(title)}</title><link rel="stylesheet" href="../../assets/legal.css?v=${cssFingerprint}"></head>
-<body><header><a class="brand" href="../../">Adaivo Music</a><nav aria-label="Legal documents">${nav}</nav></header><main>${renderMarkdown(markdown)}</main><footer>© 2026 Adaivo. All rights reserved. <a href="../../releases/${release}/${locale}/${document}.md">Canonical Markdown</a></footer></body></html>
+<body><header><a class="brand" href="../../">Adaivo Music</a><nav aria-label="${chrome.navigation}">${nav}</nav></header><main>${renderMarkdown(markdown)}</main><footer>© 2026 Adaivo. ${chrome.rights} <a href="../../releases/${release}/${locale}/${document}.md">${chrome.canonicalMarkdown}</a></footer></body></html>
 `;
-    await writeFile(resolve(outputRoot, pagePath), html);
+    await writeFile(resolve(stagedOutputRoot, pagePath), html);
     entries.push({ locale, document, source, page: `${locale}/${document}/`, markdown: `${publicBaseUrl}releases/${release}/${locale}/${document}.md`, bytes: bytes.length, sha256: createHash("sha256").update(bytes).digest("hex") });
-  }
 }
 entries.sort((a, b) => `${a.locale}/${a.document}`.localeCompare(`${b.locale}/${b.document}`));
 const manifest = { schemaVersion: 1, release, effectiveDate, generatedFrom: "c810e47c83771fafea1366a6a58d4762c553b751", documents: entries };
 const manifestText = `${JSON.stringify(manifest, null, 2)}\n`;
-await writeFile(resolve(outputRoot, "manifest.json"), manifestText);
-await mkdir(resolve(outputRoot, "site/assets"), { recursive: true });
-await writeFile(resolve(outputRoot, "site/manifest.json"), manifestText);
+await writeFile(resolve(stagedOutputRoot, "manifest.json"), manifestText);
+await mkdir(resolve(stagedOutputRoot, "site/assets"), { recursive: true });
+await writeFile(resolve(stagedOutputRoot, "site/manifest.json"), manifestText);
 
 const cards = entries.map((entry) => `<li><a href="${entry.page}">${entry.locale} · ${entry.document}</a></li>`).join("");
-await writeFile(resolve(outputRoot, "site/index.html"), `<!doctype html>
+await writeFile(resolve(stagedOutputRoot, "site/index.html"), `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><title>Adaivo Music Legal</title><link rel="stylesheet" href="assets/legal.css?v=${cssFingerprint}"></head>
 <body><header><span class="brand">Adaivo Music</span></header><main><h1>Legal documents · 法律文件</h1><p>Release ${release} · Effective ${effectiveDate}</p><ul class="cards">${cards}</ul><p><a href="manifest.json">Release manifest</a></p></main><footer>© 2026 Adaivo. All rights reserved. Public readability does not grant reuse.</footer></body></html>
 `);
-await writeFile(resolve(outputRoot, "site/assets/legal.css"), css);
+await writeFile(resolve(stagedOutputRoot, "site/assets/legal.css"), css);
+});

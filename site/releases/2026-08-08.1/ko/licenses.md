@@ -1,19 +1,20 @@
-# Adaivo Music Third-Party Notices
+# Adaivo Music 제3자 고지
 
+**Document status:** APPROVED — NATIVE-LANGUAGE AND LEGAL REVIEW COMPLETE — APPROVED FOR RELEASE AND PUBLICATION
 **Release:** 2026-08-08.1
 **Effective date:** 2026-08-08
 
-## Scope
+## 범위
 
-These are the notices included for the current release built from Adaivo Music commit c810e47c83771fafea1366a6a58d4762c553b751. The JavaScript inventory is the complete 660-entry runtime closure deterministically derived from the exact package-lock v3 root runtime dependencies, dependencies, optional dependencies, and peer dependencies using package-lock node_modules resolution.
+이 고지는 Adaivo Music 커밋 c810e47c83771fafea1366a6a58d4762c553b751에서 빌드된 현재 릴리스에 포함됩니다. JavaScript 인벤토리는 정확한 package-lock v3의 루트 런타임 종속성, 종속성, 선택적 종속성 및 피어 종속성에서 package-lock node_modules 해석을 사용해 결정론적으로 도출한 완전한 660개 런타임 클로저입니다.
 
-The lock metadata records no repository or copyright fields for these entries. “Not recorded” is explicit and no value is inferred. Resolved source archives are separate from repository metadata. No entry has a missing or unidentified license, and none delegates its license to another named file. The three multi-license expressions are preserved exactly. Local patches apply to react-native-blob-util and react-native-track-player; their upstream licenses remain identified.
+잠금 메타데이터에는 이 항목들의 저장소 또는 저작권 필드가 기록되어 있지 않습니다. “Not recorded”는 명시적이며 어떤 값도 추론하지 않았습니다. 해석된 소스 아카이브는 저장소 메타데이터와 별개입니다. 누락되거나 식별되지 않은 라이선스는 없으며, 다른 명명된 파일에 라이선스를 위임하는 항목도 없습니다. 세 개의 복수 라이선스 식은 정확히 보존됩니다. react-native-blob-util 및 react-native-track-player에는 로컬 패치가 적용되지만 업스트림 라이선스는 계속 식별됩니다.
 
-This JavaScript closure is not a binary-derived native inventory. Final iOS and Android store binaries require regenerated and reviewed native dependency/license reports before store launch. This document does not claim native completeness.
+이 JavaScript 클로저는 바이너리에서 도출한 네이티브 인벤토리가 아닙니다. 최종 iOS 및 Android 스토어 바이너리는 스토어 출시 전에 재생성하고 검토한 네이티브 종속성/라이선스 보고서가 필요합니다. 이 문서는 네이티브 완전성을 주장하지 않습니다.
 
-Adaivo-authored music, legal text, code, and brand material are not open source and are not licensed by this notice.
+Adaivo가 작성한 음악, 법률 문서, 코드 및 브랜드 자료는 오픈 소스가 아니며 이 고지로 라이선스되지 않습니다.
 
-## Runtime JavaScript inventory
+## 런타임 JavaScript 인벤토리
 
 - package: @babel/code-frame; version: 7.29.7; lock path: node_modules/@babel/code-frame; source: https://registry.npmjs.org/@babel/code-frame/-/code-frame-7.29.7.tgz; repository: Not recorded; copyright: Not recorded; license: MIT.
 - package: @babel/compat-data; version: 7.29.7; lock path: node_modules/@babel/compat-data; source: https://registry.npmjs.org/@babel/compat-data/-/compat-data-7.29.7.tgz; repository: Not recorded; copyright: Not recorded; license: MIT.
@@ -676,9 +677,9 @@ Adaivo-authored music, legal text, code, and brand material are not open source 
 - package: yargs-parser; version: 21.1.1; lock path: node_modules/yargs-parser; source: https://registry.npmjs.org/yargs-parser/-/yargs-parser-21.1.1.tgz; repository: Not recorded; copyright: Not recorded; license: ISC.
 - package: yocto-queue; version: 0.1.0; lock path: node_modules/yocto-queue; source: https://registry.npmjs.org/yocto-queue/-/yocto-queue-0.1.0.tgz; repository: Not recorded; copyright: Not recorded; license: MIT.
 
-## License texts and notices
+## 라이선스 본문 및 고지
 
-The exact expression on each inventory row controls. For multi-license expressions, each available option is linked below. Copyright and attribution remain with the respective upstream authors and contributors.
+각 인벤토리 행의 정확한 표현이 적용됩니다. 복수 라이선스 표현의 경우 사용할 수 있는 각 선택 항목이 아래에 연결되어 있습니다. 저작권과 귀속 표시는 각 업스트림 작성자 및 기여자에게 귀속됩니다.
 
 - 0BSD: https://spdx.org/licenses/0BSD.html
 - Apache-2.0: https://spdx.org/licenses/Apache-2.0.html
@@ -692,6 +693,6 @@ The exact expression on each inventory row controls. For multi-license expressio
 - Python-2.0: https://spdx.org/licenses/Python-2.0.html
 - Unlicense: https://spdx.org/licenses/Unlicense.html
 
-## Native release gate
+## 네이티브 릴리스 게이트
 
-Identifiable committed inputs include React Native and Hermes families, AppAuth and Google support libraries, Nitro/OpenIAP components, Yoga, and OpenSSL-Universal. Android test-only dependencies are excluded by committed Gradle configuration. This summary is not a substitute for notices generated from final signed binaries; native binary-derived reports remain mandatory before store release.
+식별 가능한 커밋 입력에는 React Native 및 Hermes 계열, AppAuth 및 Google 지원 라이브러리, Nitro/OpenIAP 구성 요소, Yoga 및 OpenSSL-Universal이 포함됩니다. Android 테스트 전용 종속성은 커밋된 Gradle 구성으로 제외됩니다. 이 요약은 최종 서명된 바이너리에서 생성되는 고지를 대체하지 않습니다. 스토어 출시 전에는 네이티브 바이너리 기반 보고서가 계속 필요합니다.

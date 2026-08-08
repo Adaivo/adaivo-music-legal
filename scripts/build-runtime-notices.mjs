@@ -1,14 +1,53 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import process from "node:process";
+import { writeTransactionally } from "./output-transaction.mjs";
 
 const root = resolve(new URL("..", import.meta.url).pathname);
 const outputIndex = process.argv.indexOf("--output-dir");
 const outputRoot = outputIndex < 0 ? root : resolve(process.argv[outputIndex + 1]);
+const historicalRelease = "2026-07-23.1";
+const historicalEffectiveDate = "2026-07-23";
+const historicalLocales = ["en", "zh-Hans"];
+const releaseLocales = ["en", "zh-Hans", "ja", "ko", "zh-Hant-HK"];
+const releaseIndex = process.argv.indexOf("--release");
+const effectiveDateIndex = process.argv.indexOf("--effective-date");
+if ((releaseIndex < 0) !== (effectiveDateIndex < 0)) throw new Error("--release and --effective-date must be supplied together");
+const release = releaseIndex < 0 ? historicalRelease : process.argv[releaseIndex + 1];
+const effectiveDate = effectiveDateIndex < 0 ? historicalEffectiveDate : process.argv[effectiveDateIndex + 1];
+if (!/^\d{4}-\d{2}-\d{2}\.\d+$/.test(release ?? "") || !/^\d{4}-\d{2}-\d{2}$/.test(effectiveDate ?? "")) throw new Error("invalid release metadata");
+if (release === historicalRelease && effectiveDate !== historicalEffectiveDate) throw new Error("historical release effective-date must equal 2026-07-23");
+const locales = release === historicalRelease ? historicalLocales : releaseLocales;
+const requiresFiveLocaleRelease = release !== historicalRelease;
+const documents = ["licenses", "privacy", "terms"];
+const contentRootIndex = process.argv.indexOf("--content-root");
+const contentRoot = contentRootIndex < 0 ? root : resolve(process.argv[contentRootIndex + 1]);
 const inventory = JSON.parse(await readFile(resolve(root, "inventory/runtime-lock-inventory.json"), "utf8"));
 assert.equal(inventory.count, 660);
 assert.equal(inventory.entries.length, 660);
+
+if (requiresFiveLocaleRelease) {
+  const policy = spawnSync(process.execPath, [
+    "scripts/verify-draft-content.mjs",
+    "--root", contentRoot,
+    "--mode", "release-ready",
+    "--release", release,
+    "--effective-date", effectiveDate,
+  ], { cwd: root, encoding: "utf8" });
+  if (policy.status !== 0) {
+    const nestedReason = /release_ready_rejected: ([^\r\n]+)/.exec(policy.stderr)?.[1];
+    const assertionReason = /AssertionError(?: \[[^\]]+\])?:\s*([^\r\n]+)/.exec(policy.stderr)?.[1];
+    throw new Error(`release_ready_rejected: ${nestedReason ?? assertionReason ?? `policy process exited ${policy.status}`}`);
+  }
+}
+
+const sourceDocuments = new Map();
+for (const locale of locales) for (const document of documents) {
+  const source = `content/${locale}/${document}.md`;
+  sourceDocuments.set(`${locale}/${document}`, await readFile(resolve(contentRoot, source), "utf8"));
+}
 
 const licenseLinks = {
   "0BSD": "https://spdx.org/licenses/0BSD.html",
@@ -47,8 +86,8 @@ const zhLinks = usedLicenses.map((license) => `- ${license}：${licenseLinks[lic
 
 const en = `# Adaivo Music Third-Party Notices
 
-**Release:** 2026-07-23.1
-**Effective date:** 2026-07-23
+**Release:** ${release}
+**Effective date:** ${effectiveDate}
 
 ## Scope
 
@@ -77,8 +116,8 @@ Identifiable committed inputs include React Native and Hermes families, AppAuth 
 
 const zh = `# Adaivo Music 第三方声明
 
-**发布版本：** 2026-07-23.1
-**生效日期：** 2026-07-23
+**发布版本：** ${release}
+**生效日期：** ${effectiveDate}
 
 如中英文版本发生冲突，以英文版本为准，但适用法律禁止如此约定的除外。
 
@@ -107,7 +146,32 @@ ${zhLinks}
 可识别的已提交输入包括 React Native 与 Hermes 系列、AppAuth 与 Google 支持库、Nitro/OpenIAP 组件、Yoga 及 OpenSSL-Universal。已提交的 Gradle 配置排除 Android 仅测试依赖。本摘要不能替代从最终签名二进制文件生成的声明；商店发布前仍必须取得原生二进制派生报告。
 `;
 
-await mkdir(resolve(outputRoot, "content/en"), { recursive: true });
-await mkdir(resolve(outputRoot, "content/zh-Hans"), { recursive: true });
-await writeFile(resolve(outputRoot, "content/en/licenses.md"), en);
-await writeFile(resolve(outputRoot, "content/zh-Hans/licenses.md"), zh);
+const inventoryPrefix = "- package: ";
+const englishInventoryRows = sourceDocuments.get("en/licenses")
+  .split("\n")
+  .filter((line) => line.startsWith(inventoryPrefix));
+if (englishInventoryRows.length !== inventory.count) {
+  throw new Error("content/en/licenses.md: runtime inventory row count mismatch");
+}
+
+const generatedNotices = new Map([
+  ["en", en],
+  ["zh-Hans", zh],
+]);
+for (const locale of locales.filter((locale) => !["en", "zh-Hans"].includes(locale))) {
+  const markdown = sourceDocuments.get(`${locale}/licenses`);
+  const localizedInventoryRows = markdown
+    .split("\n")
+    .filter((line) => line.startsWith(inventoryPrefix));
+  if (JSON.stringify(localizedInventoryRows) !== JSON.stringify(englishInventoryRows)) {
+    throw new Error(`${locale}/licenses: runtime inventory metadata drifted`);
+  }
+  generatedNotices.set(locale, markdown);
+}
+
+await writeTransactionally(outputRoot, async (stagedOutputRoot) => {
+  for (const [locale, markdown] of generatedNotices) {
+    await mkdir(resolve(stagedOutputRoot, "content", locale), { recursive: true });
+    await writeFile(resolve(stagedOutputRoot, "content", locale, "licenses.md"), markdown);
+  }
+});
