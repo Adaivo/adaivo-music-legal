@@ -21,6 +21,8 @@ jobs:
       - run: npm test
       - run: npm run build
       - run: npm run verify
+      - name: Include TikTok URL verification file
+        run: cp verification/tiktokap9cLRrXmpcJu6uOXPjQTov6ma9yB0HK.txt site/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
