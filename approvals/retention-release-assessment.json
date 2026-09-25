@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "release": "2026-09-25.1",
+  "assessmentType": "bounded-operational-publication-assessment",
+  "assessor": "Codex release operator",
+  "decision": "publication-condition-satisfied-for-initial-release",
+  "operatorTextApproval": "legal-owner-review/operator-confirmation.json",
+  "operatorOperatingChoice": "Hybrid automatic and manual; subsequent correction requires operations independent of Codex",
+  "basis": [
+    "Cloudflare native Worker and container log retention is documented as 3/7 days, below the approved 90-day ceiling; API log exports were off in the recorded live check.",
+    "Production aggregate audit at 2026-09-25T04:13:08Z found all 19 scoped personal/security/transaction tables empty, zero invalid timestamps; no current overdue records require deletion.",
+    "Workspace scoped Music-address mail query including archive/trash found no messages older than22months. Both Music aliases are controlled by the existing operator mailbox; support has passed receive/reply acceptance.",
+    "Existing account deletion performs the disclosed partial erasure and revocation; tests cover retained non-authorizing purchase audit data. Public wording expressly does not promise immediate deletion of every record.",
+    "User chose Hybrid. Manual mailbox and exceptional-record handling uses native Workspace/Cloudflare administration by the operating owner, with22month review target/24month feedback ceiling and original event timestamps. A Codex recurring task is neither required nor retained.",
+    "Existing Cloudflare-native media cleanup is deployed toProduction and independently scheduled; it is not evidence of personal-record erasure."
+  ],
+  "operatingProcedure": {
+    "owner": "Hui Bin Huang, Adaivo operator",
+    "cadence": "Monthly operator review using native service administration; no Codex dependency",
+    "supportMail": "Review Music-address received/sent/archived/trash messages at22calendar months; remove scoped messages/quoted copies before24months, accounting for recovery. No shared-mailbox blanket delete.",
+    "securityRecords": "Review original timestamp and expiry before90days; use supported deletion or de-identification and preserve required revocation checks.",
+    "transactionsAndHolds": "Keep only records necessary for active entitlement, recovery, refunds, unresolved dispute or documented legal purpose; record each exception reason and next review date; no indefinite default.",
+    "restoration": "Reapply prior deletions and expired-data restrictions before reopening restored data to normal access."
+  },
+  "limits": [
+    "No legal or native-language professional review is claimed.",
+    "This assesses present controls and an operator-selected manual procedure, not proof that future monthly operations have already happened.",
+    "No blanket claim of automated mailbox/account/transaction deletion is made.",
+    "Actual final-binary disclosure and store privacy consistency remain required."
+  ],
+  "sources": [
+    "privacy-retention-evidence.md",
+    "retention-implementation-plan.md",
+    "production-launch-checklist.md"
+  ]
+}

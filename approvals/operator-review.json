@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "release": "2026-09-25.1",
+  "effectiveDate": "2026-09-25",
+  "reviewType": "operator-reviewed",
+  "reviewer": "Hui Bin Huang (operator, explicit user confirmation)",
+  "recordedAt": "2026-09-25T04:07:00.000Z",
+  "userDecision": "已审阅，确认更新后的候选",
+  "decision": "approved-for-publication",
+  "publicationCondition": "Necessary retention measures must be verified before public publication and app bundling. No legal or native-language professional review is claimed.",
+  "documents": {
+    "content/en/licenses.md": "fda0489ba9f330df84ba541b0eda24e62e186d9dce0279572cff5db25c87006d",
+    "content/en/privacy.md": "fc6eed8c13bbaf5ea07181234f50cc2ec16c4f2515dc31e2e1bf674e9ffc95ad",
+    "content/en/terms.md": "f5e5207029937b3c51cf31009d5057067d5c04d3b0dcfee0d05e66023eb39446",
+    "content/ja/licenses.md": "82c7a4ff88dc1393ebbd96a94d761e5d0c0e04e56ecb74729686d7854f36e592",
+    "content/ja/privacy.md": "2ff6bd553b1f1d88fa29f77f2ad9efaaf1bfac082ba8bbc9d371721fd3676e9c",
+    "content/ja/terms.md": "8d41df2255d45d4804585d953aaa640e2e6983bf7726bc42f7163ac7173a2a65",
+    "content/ko/licenses.md": "a474830a33bba89356cfb349bef94a039c6ae65ca9d580c6063f8d7c261f021f",
+    "content/ko/privacy.md": "f81490693ef62ab6f87c199d6df543e0e6d41280ed68db4aa16ea4177248d3b8",
+    "content/ko/terms.md": "53b4645855000a60758c06be3360dac7b949c25e23ad1a1b87459eadf8436cc3",
+    "content/zh-Hans/licenses.md": "ae0b920dfd0aa8ce160db6e1743114f9aa372dcb8fab92f692b56af8f914b399",
+    "content/zh-Hans/privacy.md": "fc90156ea8dc973e7fd1d8b58b22c0473095faa8db6bd417b095179da8091111",
+    "content/zh-Hans/terms.md": "6f87206c6c31591e9ea65742caa1ad43cb5630f924ea0a93795ac7bce7459e0c",
+    "content/zh-Hant-HK/licenses.md": "c67e34fcfa8841fcc8ef2b731bfa1ed62417e5ffb51cb50af1dcb22960d36797",
+    "content/zh-Hant-HK/privacy.md": "c99770f40a4599225e8969ea85ec55565e952d465852e02929a83677fa2be642",
+    "content/zh-Hant-HK/terms.md": "3a0909f023cb4c27dc7cb174a04bef47540a337bd64f07a13e4a9ca9cf69db0b"
+  },
+  "approvedAt": "2026-09-25T04:07:00.000Z",
+  "candidateDocuments": {
+    "content/en/licenses.md": "ccc205e62aa89378ad3d622d1ab1f4a77f83e2969b2beb5961f69ed9a636f08c",
+    "content/en/privacy.md": "03707c95058e377bc3135d67eb6766b21dd4739a9e3b818b6edfb9f6eb212730",
+    "content/en/terms.md": "33b2b4ed8b50c480c9535674059331d30a72fc6b1f2020b7800819e726eeb15e",
+    "content/ja/licenses.md": "d4655d4f65bdbc920743c6b9d6ef55c3c70bbccb81a43006f2fac1f20896a11f",
+    "content/ja/privacy.md": "1d1a15a08b460fb4a291d8aadb0760bd31c9d9e6b19b7f68d659062020231c3e",
+    "content/ja/terms.md": "8075aafb9a9351c27dc00ae43d024198176ac673a7268a97a025b7d8a6ce9e4d",
+    "content/ko/licenses.md": "72d82d58a0f875b453230775d9c16f818b54079ac718e0cb1ebc22bc35e4058c",
+    "content/ko/privacy.md": "74229a838df997d004de5b9f948fce4e2d6bcdf0975dd2ea6d6acc66e9cffea5",
+    "content/ko/terms.md": "f689fc684011ca4d29b1502fc25ee524a64843f72b55354a98a1716e49393b57",
+    "content/zh-Hans/licenses.md": "7c193187302c53bca6200029c32f4880468016d46c5674994e2ccebe8b5e2e28",
+    "content/zh-Hans/privacy.md": "3125005a7148e125c2d5a530907ba72ec7e84407cb824bc02488ea43a5994577",
+    "content/zh-Hans/terms.md": "5c6ff87928488aeae97debc72834a2cc637e340210621299f87e09e66670ceb6",
+    "content/zh-Hant-HK/licenses.md": "5ce99d7a39e9b2631c4da350467c1272253ae370fe38a6987ecb3f14ce5ed8f5",
+    "content/zh-Hant-HK/privacy.md": "a764db8876ea9e20041781f8e50f22b935dfe2365620e555b0fd78bc50139578",
+    "content/zh-Hant-HK/terms.md": "0c25f20fd4689061922ac29c0f587b9861d9a3b744dc4a8e8a598ced92ead395"
+  },
+  "statusTransition": {
+    "from": "PENDING OPERATOR REVIEW",
+    "to": "OPERATOR REVIEWED — APPROVED FOR PUBLICATION BY OPERATOR — NO LEGAL OR NATIVE-LANGUAGE REVIEW CLAIM",
+    "onlyChange": "single status line; all other bytes unchanged"
+  },
+  "originalConditionalDecision": "approved-subject-to-retention-verification",
+  "conditionAssessment": {
+    "path": "approvals/retention-release-assessment.json",
+    "sha256": "6eb5c4e51d7353356d19af6583511f336e8973203abf0bce6c3fdf3ab699368b",
+    "decision": "publication-condition-satisfied-for-initial-release"
+  }
+}

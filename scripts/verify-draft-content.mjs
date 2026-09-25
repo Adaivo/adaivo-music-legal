@@ -11,6 +11,8 @@ const root = rootIndex < 0
   ? resolve(new URL('..', import.meta.url).pathname)
   : resolve(process.argv[rootIndex + 1]);
 const selfTest = process.argv.includes('--self-test');
+// Self-tests use immutable reviewed fixtures, independent of current release content.
+const contentDirectory = selfTest ? resolve(root, 'site/releases/2026-08-08.1') : resolve(root, 'content');
 const modeIndex = process.argv.indexOf('--mode');
 const mode = modeIndex < 0 ? (selfTest ? 'release-ready' : null) : process.argv[modeIndex + 1];
 if (!['draft-inventory', 'release-ready'].includes(mode)) {
@@ -87,7 +89,7 @@ const draftSemantics = {
 };
 
 async function contentFiles(locale) {
-  const directory = resolve(root, 'content', locale);
+  const directory = resolve(contentDirectory, locale);
   const entries = await readdir(directory, {withFileTypes: true});
   for (const entry of entries) {
     assert(entry.isFile() && !entry.isSymbolicLink(),
@@ -99,7 +101,7 @@ async function contentFiles(locale) {
 }
 
 async function source(locale, document) {
-  return readFile(resolve(root, 'content', locale, `${document}.md`), 'utf8');
+  return readFile(resolve(contentDirectory, locale, `${document}.md`), 'utf8');
 }
 
 function exactCount(text, value, label) {
@@ -145,7 +147,7 @@ for (const locale of locales) {
   assert.deepEqual(await contentFiles(locale), ['licenses.md', 'privacy.md', 'terms.md'],
     `${locale}: exact document set required`);
 }
-assert.deepEqual((await readdir(resolve(root, 'content'))).sort(), locales.slice().sort(),
+assert.deepEqual((await readdir(contentDirectory)).sort(), locales.slice().sort(),
   'content must contain exactly five locales');
 
 // One operator record covers every document, including English and Simplified Chinese.
@@ -153,7 +155,7 @@ assert.deepEqual((await readdir(resolve(root, 'content'))).sort(), locales.slice
 const operatorDocuments = new Map();
 for (const locale of locales) for (const document of documents) {
   const path = `content/${locale}/${document}.md`;
-  operatorDocuments.set(path, await readFile(resolve(root, path)));
+  operatorDocuments.set(path, await readFile(resolve(contentDirectory, locale, `${document}.md`)));
 }
 const operatorMode = [...operatorDocuments.values()].some(bytes => bytes.toString('utf8').includes(`**Document status:** ${operatorStatus}`));
 if (operatorMode) {
@@ -379,7 +381,7 @@ if (selfTest) {
   async function assertDraftInventoryRejectsMutation(name, mutate, expected) {
     const fixture = await mkdtemp(resolve(tmpdir(), `adaivo-legal-draft-${name}-`));
     try {
-      await cp(resolve(root, 'content'), resolve(fixture, 'content'), {recursive: true});
+      await cp(contentDirectory, resolve(fixture, 'content'), {recursive: true});
       await cp(resolve(root, 'inventory'), resolve(fixture, 'inventory'), {recursive: true});
       for (const locale of draftLocales) for (const document of documents) {
         const source = resolve(fixture, 'content', locale, `${document}.md`);

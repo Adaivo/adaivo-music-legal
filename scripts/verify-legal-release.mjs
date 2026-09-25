@@ -80,14 +80,14 @@ export function validateManifestTopology(manifest) {
   assert.deepEqual(actual, expected, "manifest locale/document topology mismatch");
 }
 
-export function validateSource(text, locale, document, release, effectiveDate) {
+export function validateSource(text, locale, document, release, effectiveDate, operatorReviewed = false) {
   assert(text.includes(release), `${locale}/${document}: release mismatch`);
   assert(text.includes(effectiveDate), `${locale}/${document}: effective-date mismatch`);
   assert(!/<\/?[A-Za-z][^>]*>|<script|!\[[^\]]*\]\(/i.test(text), `${locale}/${document}: raw HTML/script/image`);
   assert(!text.includes("`"), `${locale}/${document}: inline code/backticks are unsupported`);
   assert(!/\bUNKNOWN\b/.test(text), `${locale}/${document}: UNKNOWN license entry`);
   if (locale === "en") for (const section of required[document]) assert(text.toLowerCase().includes(section.toLowerCase()), `${locale}/${document}: missing ${section}`);
-  if (locale === "zh-Hans") assert(text.includes("英文版本为准"), `${locale}/${document}: missing English-controls clause`);
+  if (locale === "zh-Hans" && !operatorReviewed) assert(text.includes("英文版本为准"), `${locale}/${document}: missing English-controls clause`);
   for (const match of text.matchAll(/https?:\/\/[^\s)`]+/g)) {
     const url = new URL(match[0]);
     assert.equal(url.protocol, "https:", `${locale}/${document}: non-HTTPS URL`);
@@ -134,13 +134,16 @@ async function verifyDeterministicBuild(release, effectiveDate) {
     }
     const build = spawnSync(process.execPath, ["scripts/build-manifest.mjs", "--release", release, "--effective-date", effectiveDate, "--output-dir", isolated], { cwd: root, encoding: "utf8" });
     assert.equal(build.status, 0, build.stderr);
-    const historicalPaths = release === historicalRelease
-      ? []
-      : await listFiles(root, `site/releases/${historicalRelease}`);
-    if (release !== historicalRelease) {
-      assert.deepEqual(historicalPaths, historicalLocales.flatMap((locale) =>
-        documents.map((document) => `site/releases/${historicalRelease}/${locale}/${document}.md`),
-      ).sort(), 'historical release topology differs');
+    // Preserve every prior immutable release, not just the first published release.
+    const historicalPaths = (await listFiles(root, "site/releases"))
+      .filter(path => !path.startsWith(`site/releases/${release}/`));
+    const priorReleases = [...new Set(historicalPaths.map(path => path.split("/")[2]))];
+    for (const prior of priorReleases) {
+      assert(/^\d{4}-\d{2}-\d{2}\.\d+$/.test(prior), "invalid historical release directory");
+      const priorLocales = prior === historicalRelease ? historicalLocales : releaseLocales;
+      assert.deepEqual(historicalPaths.filter(path => path.startsWith(`site/releases/${prior}/`)),
+        priorLocales.flatMap(locale => documents.map(document => `site/releases/${prior}/${locale}/${document}.md`)).sort(),
+        "historical release topology differs");
     }
     const generatedPaths = ["manifest.json", ...await listFiles(isolated, "site")];
     const expectedPaths = [...generatedPaths, ...historicalPaths].sort();
@@ -182,7 +185,7 @@ async function verify() {
     assert(entry, `missing ${locale}/${document}`);
     const markdownUrl = validateManifestMarkdownUrl(entry.markdown, release, locale, document);
     const source = await readFile(resolve(root, entry.source), "utf8");
-    validateSource(source, locale, document, release, effectiveDate);
+    validateSource(source, locale, document, release, effectiveDate, source.includes("**Document status:** OPERATOR REVIEWED — APPROVED FOR PUBLICATION BY OPERATOR — NO LEGAL OR NATIVE-LANGUAGE REVIEW CLAIM"));
     const canonicalPath = markdownUrl.pathname.slice(`${publicBasePath}`.length);
     const canonical = await readFile(resolve(root, "site", canonicalPath));
     assert.equal(canonical.length, entry.bytes, `${locale}/${document}: byte mismatch`);
@@ -214,6 +217,10 @@ async function verify() {
 }
 
 if (process.argv.includes("--self-test")) {
+  const operatorChinese = "# 隐私政策\n2026-09-25.1 2026-09-25\n已审阅正文";
+  assert.throws(() => validateSource(operatorChinese, "zh-Hans", "privacy", "2026-09-25.1", "2026-09-25"), /English-controls/);
+  assert.doesNotThrow(() => validateSource(operatorChinese, "zh-Hans", "privacy", "2026-09-25.1", "2026-09-25", true));
+
   const validRoot = { schemaVersion: 1, release: "x", effectiveDate: "x", generatedFrom: "x", documents: [] };
   validateManifestRoot(validRoot);
   assert.throws(() => validateManifestRoot({ ...validRoot, schemaVersion: 2 }), /schemaVersion/);
@@ -261,12 +268,7 @@ if (process.argv.includes("--self-test")) {
     function releaseReadyErrorLine(result) {
       return result.stderr.split("\n").find((line) => line.startsWith("Error: release_ready_rejected:"));
     }
-    await cp(resolve(root, "content"), resolve(historicalFixture, "content"), { recursive: true });
-    for (const locale of historicalLocales) for (const document of documents) {
-      const source = resolve(historicalFixture, "content", locale, `${document}.md`);
-      const text = await readFile(source, "utf8");
-      await writeFile(source, text.replaceAll("2026-08-08.1", historicalRelease).replaceAll("2026-08-08", "2026-07-23"));
-    }
+    await cp(resolve(root, "site/releases", historicalRelease), resolve(historicalFixture, "content"), { recursive: true });
     const historicalBuild = spawnSync(process.execPath, ["scripts/build-manifest.mjs", "--release", historicalRelease, "--effective-date", "2026-07-23", "--content-root", historicalFixture, "--output-dir", isolated], { cwd: root, encoding: "utf8" });
     assert.equal(historicalBuild.status, 0, historicalBuild.stderr);
     const defaultHistoricalNotices = spawnSync(process.execPath, ["scripts/build-runtime-notices.mjs", "--content-root", historicalFixture, "--output-dir", isolated], { cwd: root, encoding: "utf8" });
@@ -290,17 +292,19 @@ if (process.argv.includes("--self-test")) {
       assert.match(result.stderr, /historical release effective-date/);
     }
     assert.deepEqual(await readdir(parameterTarget), [], "invalid metadata must not create output");
-    const futureBuild = spawnSync(process.execPath, ["scripts/build-manifest.mjs", "--release", futureRelease, "--effective-date", futureEffectiveDate, "--output-dir", rejected], { cwd: root, encoding: "utf8" });
+    await cp(resolve(root, "site/releases", sourceRelease), resolve(staleMetadataFixture, "content"), { recursive: true });
+    await cp(resolve(root, "inventory"), resolve(staleMetadataFixture, "inventory"), { recursive: true });
+    const futureBuild = spawnSync(process.execPath, ["scripts/build-manifest.mjs", "--release", futureRelease, "--effective-date", futureEffectiveDate, "--content-root", staleMetadataFixture, "--output-dir", rejected], { cwd: root, encoding: "utf8" });
     assert.notEqual(futureBuild.status, 0, "draft content must reject a future manifest build");
     assert.equal(releaseReadyErrorLine(futureBuild), "Error: release_ready_rejected: en/terms: release mismatch");
     assert.deepEqual(await readdir(rejected), [], "future manifest rejection must not leave partial output");
-    const futureNotices = spawnSync(process.execPath, ["scripts/build-runtime-notices.mjs", "--release", futureRelease, "--effective-date", futureEffectiveDate, "--output-dir", rejected], { cwd: root, encoding: "utf8" });
+    const futureNotices = spawnSync(process.execPath, ["scripts/build-runtime-notices.mjs", "--release", futureRelease, "--effective-date", futureEffectiveDate, "--content-root", staleMetadataFixture, "--output-dir", rejected], { cwd: root, encoding: "utf8" });
     assert.notEqual(futureNotices.status, 0, "draft content must reject future runtime notices");
     assert.equal(releaseReadyErrorLine(futureNotices), "Error: release_ready_rejected: en/terms: release mismatch");
     assert.deepEqual(await readdir(rejected), [], "future notices rejection must not leave partial output");
 
     async function prepareApprovedFixture(fixture, updatePrimaryMetadata) {
-      await cp(resolve(root, "content"), resolve(fixture, "content"), { recursive: true });
+      await cp(resolve(root, "site/releases", sourceRelease), resolve(fixture, "content"), { recursive: true });
       await mkdir(resolve(fixture, "inventory"), { recursive: true });
       await cp(resolve(root, "inventory/runtime-lock-inventory.json"), resolve(fixture, "inventory/runtime-lock-inventory.json"));
       for (const locale of releaseLocales) for (const document of documents) {
@@ -322,7 +326,7 @@ if (process.argv.includes("--self-test")) {
 
     await prepareApprovedFixture(approvedFixture, true);
     await prepareApprovedFixture(staleMetadataFixture, false);
-    await cp(resolve(root, "content"), resolve(futureDraftFixture, "content"), { recursive: true });
+    await cp(resolve(root, "site/releases", sourceRelease), resolve(futureDraftFixture, "content"), { recursive: true });
     await mkdir(resolve(futureDraftFixture, "inventory"), { recursive: true });
     await cp(resolve(root, "inventory/runtime-lock-inventory.json"), resolve(futureDraftFixture, "inventory/runtime-lock-inventory.json"));
     for (const locale of releaseLocales) for (const document of documents) {
