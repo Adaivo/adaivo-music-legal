@@ -91,7 +91,7 @@ export function validateSource(text, locale, document, release, effectiveDate) {
   for (const match of text.matchAll(/https?:\/\/[^\s)`]+/g)) {
     const url = new URL(match[0]);
     assert.equal(url.protocol, "https:", `${locale}/${document}: non-HTTPS URL`);
-    assert(["registry.npmjs.org", "spdx.org", "www.apache.org", "opensource.org", "www.openssl.org"].includes(url.hostname), `${locale}/${document}: URL host not allowlisted`);
+    assert(["registry.npmjs.org", "spdx.org", "www.apache.org", "opensource.org", "www.openssl.org", "policies.google.com"].includes(url.hostname), `${locale}/${document}: URL host not allowlisted`);
   }
   if (document === "licenses") assert(!/Adaivo.{0,50}(is open source|licensed under (the )?(MIT|Apache))/i.test(text), `${locale}/${document}: Adaivo content marked OSS`);
   if (document === "licenses") for (const entry of runtimeInventory) {

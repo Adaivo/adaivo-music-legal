@@ -154,9 +154,11 @@ if (englishInventoryRows.length !== inventory.count) {
   throw new Error("content/en/licenses.md: runtime inventory row count mismatch");
 }
 
+// Preserve exact reviewed source bytes on the operator route, including notices.
+const operatorReviewed = sourceDocuments.get("en/licenses").includes("**Document status:** OPERATOR REVIEWED —");
 const generatedNotices = new Map([
-  ["en", en],
-  ["zh-Hans", zh],
+  ["en", operatorReviewed ? sourceDocuments.get("en/licenses") : en],
+  ["zh-Hans", operatorReviewed ? sourceDocuments.get("zh-Hans/licenses") : zh],
 ]);
 for (const locale of locales.filter((locale) => !["en", "zh-Hans"].includes(locale))) {
   const markdown = sourceDocuments.get(`${locale}/licenses`);

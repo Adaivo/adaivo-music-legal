@@ -11,7 +11,7 @@ const historicalRelease = "2026-07-23.1";
 const historicalLocales = ["en", "zh-Hans"];
 const releaseLocales = ["en", "zh-Hans", "ja", "ko", "zh-Hant-HK"];
 const documents = ["licenses", "privacy", "terms"];
-const allowedHosts = new Set(["registry.npmjs.org", "spdx.org", "www.apache.org", "opensource.org", "www.openssl.org"]);
+const allowedHosts = new Set(["registry.npmjs.org", "spdx.org", "www.apache.org", "opensource.org", "www.openssl.org", "policies.google.com"]);
 
 function optionalArg(name, fallback) {
   const i = process.argv.indexOf(name);

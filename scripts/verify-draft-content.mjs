@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {operatorStatus, verifyOperatorReview} from './operator-review.mjs';
 import {cp, mkdtemp, readFile, readdir, rm, writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {resolve} from 'node:path';
@@ -147,6 +148,19 @@ for (const locale of locales) {
 assert.deepEqual((await readdir(resolve(root, 'content'))).sort(), locales.slice().sort(),
   'content must contain exactly five locales');
 
+// One operator record covers every document, including English and Simplified Chinese.
+// Read exact bytes so line-ending or content changes invalidate approval.
+const operatorDocuments = new Map();
+for (const locale of locales) for (const document of documents) {
+  const path = `content/${locale}/${document}.md`;
+  operatorDocuments.set(path, await readFile(resolve(root, path)));
+}
+const operatorMode = [...operatorDocuments.values()].some(bytes => bytes.toString('utf8').includes(`**Document status:** ${operatorStatus}`));
+if (operatorMode) {
+  assert.equal(mode, 'release-ready', 'operator review requires release-ready validation');
+  await verifyOperatorReview(root, release, effectiveDate, operatorDocuments);
+}
+
 const englishLicenses = await source('en', 'licenses');
 const englishDocuments = {
   terms: await source('en', 'terms'),
@@ -269,7 +283,18 @@ for (const locale of locales) for (const document of documents) {
     `**Reference effective date:** ${effectiveDate}`,
     `**Target locale:** ${locale}`,
   ];
-  if (draftLocales.has(locale)) {
+  if (operatorMode) {
+    exactCount(text, `**Document status:** ${operatorStatus}`, `release_ready_rejected: ${locale}/${document} operator status`);
+    assert.equal(markerCount, 0, 'release_ready_rejected: operator document still draft');
+    assert.equal(approvedMarkerCount, 0, 'release_ready_rejected: operator approval cannot claim legal/native review');
+    const firstSection = text.indexOf('\n## ');
+    const metadata = locale === 'zh-Hans'
+      ? [`**发布版本：** ${release}`, `**生效日期：** ${effectiveDate}`]
+      : [`**Release:** ${release}`, `**Effective date:** ${effectiveDate}`];
+    assert.deepEqual(text.slice(0, firstSection).split('\n').filter(line => line.trim()),
+      [`# ${documentTitles[locale][document]}`, `**Document status:** ${operatorStatus}`, ...metadata],
+      `release_ready_rejected: ${locale}/${document} operator preamble`);
+  } else if (draftLocales.has(locale)) {
     if (mode === 'draft-inventory') {
       exactCount(text, marker, `${locale}/${document}: draft status`);
       exactCount(text, draftWarnings[locale], `${locale}/${document}: draft warning`);
@@ -334,7 +359,8 @@ for (const locale of locales) for (const document of documents) {
   if (draftLocales.has(locale) && (document === 'terms' || document === 'privacy')) {
     validateTranslatedStructure(englishDocuments[document], text, locale, document);
   }
-  for (const required of draftSemantics[`${locale}/${document}`] ?? []) {
+  // Historical phrase pins apply to the historical review route; operator review binds the entire revised text.
+  for (const required of operatorMode ? [] : (draftSemantics[`${locale}/${document}`] ?? [])) {
     assert(text.includes(required), `${locale}/${document}: audited legal wording missing: ${required}`);
   }
   if (locale === 'ja' && document === 'privacy') {
